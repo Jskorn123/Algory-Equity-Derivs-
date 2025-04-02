@@ -42,7 +42,7 @@ def gen_Q_V(V_0, r, theta, k, sigma, end_t):
 
     Note: Q is percent change in S (asset returns): \frac{S_{t+1}}{S_t}
     - This means we don't directly need S for this
-    
+
     Z represents our Wiener processes/Brownian motion
     '''
     Q_vals = [0]
@@ -117,12 +117,15 @@ def method_of_moments(end_t, V_data = None):
     V = init_guess[1]
     Q = gen_Q_V(V, init_guess[2], init_guess[1], init_guess[0], init_guess[3], end_t)
 
-    emp_moments = np.array([np.mean(Q**i) for i in range(1, 6)])
-    mu1, mu2, _, mu4, mu5 = emp_moments
-
     def heston_moments(params):
         """Defines the system of equations for method of moments estimation."""
         r, theta, k, sigma = params
+
+        # recalculate QV and emp_moments
+        Q = gen_Q_V(V, init_guess[2], init_guess[1], init_guess[0], init_guess[3], end_t)
+
+        emp_moments = np.array([np.mean(Q**i) for i in range(1, 6)])
+        mu1, mu2, _, mu4, mu5 = emp_moments
 
         # mu_1
         eq1 = mu1 - (1 + r)  # Solve for r

@@ -3,7 +3,7 @@ Discretization:
 - Forward Euler (this is the least accurate but easiest)
 
 Note: don't need Cuckoo Search. Our paper presents two approaches toward parameter estimation
-- Moment in moments
+- Moment in moments (fits non-convex spaces)
 - MLE (Maximum Likelihood Estimation)
 '''
 import numpy as np
@@ -19,7 +19,7 @@ from scipy.optimize import fsolve, least_squares # fitting paraeters
 
 # def next_V(V, k, theta)
 
-def gen_Q_V(V_0, k, theta, r, sigma, end_t):
+def gen_Q_V(V_0, r, theta, k, sigma, end_t):
     '''
     For now, forward Euler discretiation scheme
     - Higher-order discretization is far more complicated (Milstein method). Conventional methods like RK4 won't work
@@ -34,7 +34,15 @@ def gen_Q_V(V_0, k, theta, r, sigma, end_t):
     theta: LT rate of volatility mean reversion
     end_t: last timestep
 
+    Note: two parameters that we are optimizating for are in here so we need to recalculate every instance: kappa/k, sigma
+    V_0
+    - Can set to theta
+    - Or, calculate as variance of returns (log) or variance of underlying asset price.
+    - Need to clarify which option we want 
+
     Note: Q is percent change in S (asset returns): \frac{S_{t+1}}{S_t}
+    - This means we don't directly need S for this
+    
     Z represents our Wiener processes/Brownian motion
     '''
     Q_vals = [0]
@@ -66,13 +74,27 @@ def convert_S_to_Q(S):
     for i in range(1, len(S)):
         S[i] = S[i]/ S[i-1]
     
+    S[0] = 0
+
     return S
+
+def gen_V(data, log_transform = True):
+    '''
+    This is variance based on log-transformed S i.e. % change in S
+
+    Not sure if this is supposed to be variance of S price (as paper says) or log-transformed returns
+    - We basically log-transform S in our calibration, but the paper textually says variance of asset price
+    '''
+    if log_transform:
+        return np.mean([(np.log10(data[i]) - np.log10(data[i-1])) ** 2 for i in range(1, len(data))])
+    
+    return np.std(data)
 
 ### PARAMETER OPTIMIZATION SCHEME ###
 
 ### METHOD OF MOMENTS ###
 
-def method_of_moments(Q):
+def method_of_moments(end_t, V_data = None):
     '''
     We want 5 moments of Q_{t+1} in terms of five parameters r,k,theta, sigma, rho
 
@@ -84,7 +106,16 @@ def method_of_moments(Q):
     - doesn't estimate rho, but paper asserts this isn't a big deal.
 
     Iteratively fit variables based on each moment. Each moment allows us to solve for one more parameter (excluding rho)
+
+    @end_t: specifies length of log-transformed S (Q)
+    @V_data (optional): source S data for calculating V_0 (variance/squared stdev of log-transformed S)
     '''
+    # Initial guess for (r, theta, k, sigma)
+    init_guess = [0.02, 0.04, 100.00, 0.2]
+    # if we believe our market is in long-run equilibrium, we can set v_0 = theta
+    # Need someone to further research v_0. This should be fine, just wondering if there's benefits to otherwise calculating v_0
+    V = init_guess[1]
+    Q = gen_Q_V(V, init_guess[2], init_guess[1], init_guess[0], init_guess[3], end_t)
 
     emp_moments = np.array([np.mean(Q**i) for i in range(1, 6)])
     mu1, mu2, _, mu4, mu5 = emp_moments
@@ -115,9 +146,6 @@ def method_of_moments(Q):
 
         # min least squares all 4 eq's at same time
         return np.array([eq1, eq2, eq3, eq4])
-
-    # Initial guess for (r, theta, k, sigma)
-    init_guess = [0.02, 0.04, 100.00, 0.2]
 
     # Solve using least squares (more stable than fsolve)
     result = least_squares(heston_moments, init_guess)

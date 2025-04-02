@@ -1,4 +1,6 @@
 # credit: https://quant.stackexchange.com/questions/18684/heston-model-option-price-formulahttps://quant.stackexchange.com/questions/18684/heston-model-option-price-formula
+# not sure if i should replace this with the one from our paper, most likely will
+
 
 import numpy as np
 import scipy.integrate

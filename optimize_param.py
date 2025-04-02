@@ -34,7 +34,7 @@ def gen_Q_V(V_0, k, theta, r, sigma, end_t):
     theta: LT rate of volatility mean reversion
     end_t: last timestep
 
-    Note: Q is percent hcange in S (asset returns): \frac{S_{t+1}}{S_t}
+    Note: Q is percent change in S (asset returns): \frac{S_{t+1}}{S_t}
     Z represents our Wiener processes/Brownian motion
     '''
     Q_vals = [0]

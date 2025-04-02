@@ -115,7 +115,6 @@ def method_of_moments(end_t, V_data = None):
     # if we believe our market is in long-run equilibrium, we can set v_0 = theta
     # Need someone to further research v_0. This should be fine, just wondering if there's benefits to otherwise calculating v_0
     V = init_guess[1]
-    Q = gen_Q_V(V, init_guess[2], init_guess[1], init_guess[0], init_guess[3], end_t)
 
     def heston_moments(params):
         """Defines the system of equations for method of moments estimation."""

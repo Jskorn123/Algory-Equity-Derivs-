@@ -88,7 +88,7 @@ def gen_V(data, log_transform = True):
     if log_transform:
         return np.mean([(np.log10(data[i]) - np.log10(data[i-1])) ** 2 for i in range(1, len(data))])
     
-    return np.std(data)
+    return np.std(data) ** 2
 
 ### PARAMETER OPTIMIZATION SCHEME ###
 

@@ -115,13 +115,15 @@ def method_of_moments(end_t, V_data = None):
     # if we believe our market is in long-run equilibrium, we can set v_0 = theta
     # Need someone to further research v_0. This should be fine, just wondering if there's benefits to otherwise calculating v_0
     V = init_guess[1]
+    rho = -float('inf')
 
     def heston_moments(params):
         """Defines the system of equations for method of moments estimation."""
         r, theta, k, sigma = params
+        nonlocal rho
 
         # recalculate QV and emp_moments
-        Q = gen_Q_V(V, init_guess[2], init_guess[1], init_guess[0], init_guess[3], end_t)
+        Q, _, rho = gen_Q_V(V, init_guess[2], init_guess[1], init_guess[0], init_guess[3], end_t)
 
         emp_moments = np.array([np.mean(Q**i) for i in range(1, 6)])
         mu1, mu2, _, mu4, mu5 = emp_moments
@@ -152,7 +154,7 @@ def method_of_moments(end_t, V_data = None):
     # Solve using least squares (more stable than fsolve)
     result = least_squares(heston_moments, init_guess)
     # r, theta, k, sigma = result.x
-    return tuple(result.x)
+    return tuple(*result.x, rho)
 
 def estimate_rho(W, V):
     return np.corrcoef(W,V)[0,1]
